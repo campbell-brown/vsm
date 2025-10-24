@@ -1,10 +1,13 @@
 use clap::{Parser, Subcommand};
+use directories::ProjectDirs;
 use inquire::Select;
 use inquire::Text;
 use std::collections::HashMap;
 use std::fs;
 use std::fs::OpenOptions;
 use std::io::Write;
+use std::path::PathBuf;
+
 const FILE: &str = "projects.json";
 
 /// Simple program to greet a person
@@ -39,8 +42,18 @@ enum AddSubcommands {
 fn main() {
     let args = Args::parse();
 
-    // Read and parse projects.json
-    let data = fs::read_to_string(FILE).expect("Failed to read projects.json");
+    let file_path = get_data_file();
+    if !file_path.exists() {
+        // create empty JSON object
+        let mut file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .create(true)
+            .open(&file_path)
+            .expect("Failed to create file");
+        file.write_all(b"{}").expect("Failed to write initial JSON");
+    }
+    let data = fs::read_to_string(&file_path).expect("Failed to read projects.json");
 
     let mut projects: HashMap<String, Vec<String>> =
         serde_json::from_str(&data).expect("Failed to parse JSON");
@@ -101,7 +114,14 @@ fn save(projects: &HashMap<String, Vec<String>>) {
         .write(true)
         .truncate(true)
         .create(true)
-        .open(FILE)
+        .open(get_data_file())
         .expect("Failed to open file");
     file.write_all(data.as_bytes()).expect("Failed to write");
+}
+
+fn get_data_file() -> PathBuf {
+    let proj_dirs = ProjectDirs::from("", "", "vsm").expect("Cannot get project directory");
+    let data_dir = proj_dirs.data_dir();
+    std::fs::create_dir_all(data_dir).unwrap(); // ensure folder exists
+    data_dir.join(FILE)
 }
