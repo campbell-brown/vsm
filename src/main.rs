@@ -4,15 +4,11 @@ fn main() {
     let projects = vec!["Project A", "Project B", "Project C"];
 
     loop {
-        let project = Select::new("Select a project:", projects.clone())
-            .prompt();
+        let project = Select::new("Select a project:", projects.clone()).prompt();
 
-        let project = match project {
-            Ok(p) => p,
-            Err(_) => break, // Ctrl+C exits
-        };
+        let Ok(project) = project else { break };
 
-        let subprojects = match project.as_ref() {
+        let subprojects = match project {
             "Project A" => vec!["Sub A1", "Sub A2", "<- Back"],
             "Project B" => vec!["Sub B1", "Sub B2", "<- Back"],
             "Project C" => vec!["Sub C1", "<- Back"],
@@ -27,7 +23,7 @@ fn main() {
             continue; // go back to project selection
         }
 
-        println!("You selected {} -> {}", project, subproject);
+        println!("You selected {project} -> {subproject}");
         break;
     }
 }
