@@ -1,29 +1,39 @@
 use inquire::Select;
+use std::collections::HashMap;
+use std::fs;
 
 fn main() {
-    let projects = vec!["Project A", "Project B", "Project C"];
+    // Read and parse projects.json
+    let data = fs::read_to_string("projects.json")
+        .expect("Failed to read projects.json");
+
+    let projects: HashMap<String, Vec<String>> =
+        serde_json::from_str(&data).expect("Failed to parse JSON");
+
+    let project_names: Vec<_> = projects.keys().cloned().collect();
 
     loop {
-        let project = Select::new("Select a project:", projects.clone()).prompt();
+        let project = Select::new("Select a project:", project_names.clone())
+            .prompt();
 
         let Ok(project) = project else { break };
 
-        let subprojects = match project {
-            "Project A" => vec!["Sub A1", "Sub A2", "<- Back"],
-            "Project B" => vec!["Sub B1", "Sub B2", "<- Back"],
-            "Project C" => vec!["Sub C1", "<- Back"],
-            _ => vec![],
-        };
+        let mut subprojects = projects
+            .get(&project)
+            .cloned()
+            .unwrap_or_default();
+
+        subprojects.push("<- Back".to_string()); // fix type
 
         let subproject = Select::new("Select a subproject:", subprojects)
             .prompt()
             .unwrap();
 
         if subproject == "<- Back" {
-            continue; // go back to project selection
+            continue;
         }
 
-        println!("You selected {project} -> {subproject}");
+        println!("You selected {} -> {}", project, subproject);
         break;
     }
 }
